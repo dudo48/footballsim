@@ -1,0 +1,2 @@
+XG_FACTOR = 1.1
+XG_CONSTANT = 1.1
