@@ -1,5 +1,6 @@
 import math
 import random
+from typing import Optional
 
 from pydantic import BaseModel, computed_field
 
@@ -28,16 +29,17 @@ class Team(BaseModel):
 
     @classmethod
     def generate(
-        cls, names: list[str], min_strength: int, max_strength: int
+        cls, names: list[str], min_strength: int, max_strength: Optional[int] = None
     ) -> "list[Team]":
         """
-        Generate multiple teams with random strengths
+        Generate random team(s) with count according to number of names given
         """
+        if not max_strength:
+            max_strength = min_strength
 
         def generate_random_team(name: str) -> "Team":
             strength = random.randint(min_strength, max_strength)
-            factor: int = (-1) ** random.randint(0, 1)
-            ad_difference = int(random.random() * math.sqrt(strength)) * factor
+            ad_difference = round(random.gauss(sigma=math.log(math.sqrt(strength))))
             return cls.from_strength(name, strength, ad_difference)
 
         return [generate_random_team(name) for name in names]
