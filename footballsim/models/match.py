@@ -1,14 +1,11 @@
+from functools import cached_property
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from .constants import XG_CONSTANT, XG_FACTOR
+from .helpers import calculate_xg
 from .match_result import MatchResult
 from .team import Team
-
-
-def calculate_xg(strength: float) -> float:
-    return XG_CONSTANT * (XG_FACTOR**strength)
 
 
 class Match(BaseModel):
@@ -18,13 +15,29 @@ class Match(BaseModel):
     away_team: Team
     result: Optional[MatchResult] = None
 
-    @property
+    @cached_property
     def home_xg(self) -> float:
         return calculate_xg(self.home_team.attack - self.away_team.defense)
 
-    @property
+    @cached_property
     def away_xg(self) -> float:
         return calculate_xg(self.away_team.attack - self.home_team.defense)
+
+    @cached_property
+    def winner(self) -> Optional[Team]:
+        if self.is_win():
+            return self.home_team
+        if self.is_loss():
+            return self.away_team
+        return None
+
+    @cached_property
+    def loser(self) -> Optional[Team]:
+        if self.is_win():
+            return self.away_team
+        if self.is_loss():
+            return self.home_team
+        return None
 
     def is_win(self) -> bool:
         return bool(self.result and self.result.is_win())

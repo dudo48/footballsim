@@ -2,13 +2,15 @@ import math
 import random
 from typing import Optional
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, ConfigDict, computed_field
 
 
 class Team(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     name: str
-    attack: int
-    defense: int
+    attack: int = 0
+    defense: int = 0
 
     @classmethod
     def from_strength(cls, name: str, strength: int, ad_difference: int = 0) -> "Team":

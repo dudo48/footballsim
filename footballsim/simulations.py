@@ -23,6 +23,7 @@ def score_goals(xg: float) -> int:
 
 @singledispatch
 def simulate(match: Match) -> Match:
+    """Takes a match and returns the match with a randomly simulated result."""
     full_time = Result(
         home_goals=score_goals(match.home_xg),
         away_goals=score_goals(match.away_xg),
