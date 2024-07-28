@@ -1,9 +1,9 @@
 from collections import Counter, defaultdict
 from functools import cached_property
-from typing import Sequence
+from typing import Any, Sequence
 
 from more_itertools import flatten, ilen
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from .match import Match
 from .match_result import Result
@@ -22,7 +22,7 @@ class TeamStatistics(BaseModel):
     def validate_team_matches(self):
         assert all(
             self.team in (m.home_team, m.away_team) for m in self.matches
-        ), f"The team '{self.team}' must be a contender in all matches"
+        ), f"The team '{self.team}' must be a contender in all matches."
         return self
 
     @cached_property
@@ -97,6 +97,12 @@ class MatchStatistics(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     matches: Sequence[Match]
+
+    @field_validator("matches")
+    @classmethod
+    def non_empty(cls, sequence: Sequence[Any]):
+        assert bool(sequence), "must not be empty"
+        return sequence
 
     @cached_property
     def teams(self) -> "list[Team]":

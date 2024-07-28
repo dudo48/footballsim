@@ -11,4 +11,5 @@ def calculate_strength_diff(xg: float) -> float:
     """
     Calculate strength difference from XG. Inverse function of calculate_xg.
     """
+
     return math.log(xg / XG_CONSTANT, XG_FACTOR)

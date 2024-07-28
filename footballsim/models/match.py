@@ -39,6 +39,11 @@ class Match(BaseModel):
             return self.home_team
         return None
 
+    def __str__(self) -> str:
+        return "{} {:^9} {}".format(
+            self.home_team, str(self.result) or "-", self.away_team
+        )
+
     def is_win(self) -> bool:
         return bool(self.result and self.result.is_win())
 
@@ -48,15 +53,29 @@ class Match(BaseModel):
     def is_loss(self) -> bool:
         return bool(self.result and self.result.is_loss())
 
+    def get_opponent(self, team: Team) -> Team:
+        if team is self.home_team:
+            return self.away_team
+        elif team is self.away_team:
+            return self.home_team
+        raise ValueError(f"The team '{team}' is not a contender in the match.")
+
+    def get_team_goals(self, team: Team) -> int:
+        if not self.result:
+            raise ValueError("The match does not have a result.")
+        if team is self.home_team:
+            return self.result.home_goals
+        elif team is self.away_team:
+            return self.result.away_goals
+        raise ValueError(f"The team '{team}' is not a contender in the match.")
+
+    def get_opponent_goals(self, team: Team) -> int:
+        return self.get_team_goals(self.get_opponent(team))
+
     def get_away_match(self) -> "Match":
         return self.model_copy(
             update={
                 "home_team": self.away_team,
                 "away_team": self.home_team,
             }
-        )
-
-    def __str__(self) -> str:
-        return "{} {:^9} {}".format(
-            self.home_team, str(self.result) or "-", self.away_team
         )

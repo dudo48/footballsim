@@ -1,8 +1,14 @@
 import math
 import random
-from typing import Optional
+from statistics import fmean
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict, computed_field
+
+from .helpers import calculate_strength_diff
+
+if TYPE_CHECKING:
+    from .statistics import TeamStatistics
 
 
 class Team(BaseModel):
@@ -45,6 +51,42 @@ class Team(BaseModel):
             return cls.from_strength(name, strength, ad_difference)
 
         return [generate_random_team(name) for name in names]
+
+    @classmethod
+    def from_statistics(cls, team_statistics: "TeamStatistics") -> "Team":
+        """
+        Create a team with predicted strength from a TeamStatistics object
+
+        Args:
+            statistics (TeamStatistics):
+
+        Returns:
+            Team: a new Team object
+        """
+
+        def calculate_diff(goals: int):
+            return calculate_strength_diff(goals or 0.5)
+
+        attacks: list[float] = []
+        defenses: list[float] = []
+
+        team = team_statistics.team
+        for match in team_statistics.matches:
+            opponent = match.get_opponent(team)
+            goals_scored, goals_conceded = (
+                match.get_team_goals(team),
+                match.get_team_goals(opponent),
+            )
+
+            attacks.append(opponent.defense + calculate_diff(goals_scored))
+            defenses.append(opponent.attack - calculate_diff(goals_conceded))
+
+        return team.model_copy(
+            update={
+                "attack": round(fmean(attacks)),
+                "defense": round(fmean(defenses)),
+            }
+        )
 
     @computed_field
     @property
