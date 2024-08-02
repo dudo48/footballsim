@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 
 
 class Result(BaseModel):
@@ -27,10 +27,12 @@ class MatchResult(BaseModel):
 
     full_time: Result
 
+    @computed_field
     @cached_property
     def home_goals(self) -> int:
         return self.full_time.home_goals
 
+    @computed_field
     @cached_property
     def away_goals(self) -> int:
         return self.full_time.away_goals

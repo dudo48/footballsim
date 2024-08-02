@@ -1,5 +1,6 @@
 import math
 import random
+from functools import cached_property
 from statistics import fmean
 from typing import TYPE_CHECKING, Optional
 
@@ -89,7 +90,7 @@ class Team(BaseModel):
         )
 
     @computed_field
-    @property
+    @cached_property
     def strength(self) -> float:
         return (self.attack + self.defense) / 2
 

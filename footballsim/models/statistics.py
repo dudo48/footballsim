@@ -3,7 +3,13 @@ from functools import cached_property
 from typing import Any, Sequence
 
 from more_itertools import flatten, ilen
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
 from .match import Match
 from .match_result import Result
@@ -25,34 +31,42 @@ class TeamStatistics(BaseModel):
         ), f"The team '{self.team}' must be a contender in all matches."
         return self
 
+    @computed_field
     @cached_property
     def number_of_matches(self) -> int:
         return len(self.matches)
 
+    @computed_field
     @cached_property
     def wins(self) -> int:
         return ilen(m for m in self.matches if m.winner is self.team)
 
+    @computed_field
     @cached_property
     def draws(self) -> int:
         return ilen(m for m in self.matches if m.is_draw())
 
+    @computed_field
     @cached_property
     def losses(self) -> int:
         return ilen(m for m in self.matches if m.loser is self.team)
 
+    @computed_field
     @cached_property
     def win_percentage(self) -> float:
         return self.wins / self.number_of_matches
 
+    @computed_field
     @cached_property
     def draw_percentage(self) -> float:
         return self.draws / self.number_of_matches
 
+    @computed_field
     @cached_property
     def loss_percentage(self) -> float:
         return self.losses / self.number_of_matches
 
+    @computed_field
     @cached_property
     def goals_scored(self) -> int:
         return sum(
@@ -61,6 +75,7 @@ class TeamStatistics(BaseModel):
             if m.result
         )
 
+    @computed_field
     @cached_property
     def goals_conceded(self) -> int:
         return sum(
@@ -69,10 +84,12 @@ class TeamStatistics(BaseModel):
             if m.result
         )
 
+    @computed_field
     @cached_property
     def average_goals_scored(self) -> float:
         return self.goals_scored / self.number_of_matches
 
+    @computed_field
     @cached_property
     def average_goals_conceded(self) -> float:
         return self.goals_conceded / self.number_of_matches
@@ -104,10 +121,12 @@ class MatchStatistics(BaseModel):
         assert bool(sequence), "must not be empty"
         return sequence
 
+    @computed_field
     @cached_property
     def teams(self) -> "list[Team]":
         return list(set(flatten([(m.home_team, m.away_team) for m in self.matches])))
 
+    @computed_field
     @cached_property
     def teams_statistics(self) -> "list[TeamStatistics]":
         team_matches: "dict[Team, list[Match]]" = defaultdict(list)
@@ -120,18 +139,22 @@ class MatchStatistics(BaseModel):
             for team, matches in team_matches.items()
         ]
 
+    @computed_field
     @cached_property
     def number_of_matches(self) -> int:
         return len(self.matches)
 
+    @computed_field
     @cached_property
     def goals(self) -> int:
         return sum(stats.goals_scored for stats in self.teams_statistics)
 
+    @computed_field
     @cached_property
     def average_goals(self) -> float:
         return self.goals / self.number_of_matches
 
+    @computed_field
     @cached_property
     def results_frequency(self) -> "Counter[Result]":
         return Counter(m.result.full_time for m in self.matches if m.result)
