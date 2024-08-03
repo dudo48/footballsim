@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import Annotated
 
 from annotated_types import Len, Predicate
-from more_itertools import circular_shifts, distribute, nth
+from more_itertools import always_reversible, circular_shifts, divide, nth
 from pydantic import BaseModel, ConfigDict, PositiveInt, computed_field
 
 from .match import Match
@@ -25,7 +25,8 @@ class League(BaseModel):
     def rounds(self) -> list[Round]:
         def create_round(teams: list[Team]) -> Round:
             matches: list[Match] = []
-            for t1, t2 in distribute(len(teams) // 2, teams):
+            half_1, half_2 = divide(2, teams)
+            for t1, t2 in zip(half_1, always_reversible(half_2)):
                 match = Match(home_team=t1, away_team=t2)
                 if random.random() < 0.5:
                     match = match.get_away_match()
