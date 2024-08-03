@@ -1,6 +1,5 @@
 import math
 import random
-from functools import cached_property
 from statistics import fmean
 from typing import TYPE_CHECKING, Optional
 
@@ -22,7 +21,7 @@ class Team(BaseModel):
     @classmethod
     def from_strength(cls, name: str, strength: int, ad_difference: int = 0) -> "Team":
         """
-        Create a team from strength value and the difference between its attack and defense
+        Create a team from single strength value and the difference between its attack and defense and the value
 
         Args:
             name (str): Name of the team
@@ -90,9 +89,9 @@ class Team(BaseModel):
         )
 
     @computed_field
-    @cached_property
-    def strength(self) -> float:
-        return (self.attack + self.defense) / 2
+    @property
+    def strength(self) -> int:
+        return round((self.attack + self.defense) / 2)
 
     def __str__(self) -> str:
         return self.name

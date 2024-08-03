@@ -1,4 +1,3 @@
-from functools import cached_property
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, computed_field
@@ -16,36 +15,18 @@ class Match(BaseModel):
     result: Optional[MatchResult] = None
 
     @computed_field
-    @cached_property
+    @property
     def home_xg(self) -> float:
         return calculate_xg(self.home_team.attack - self.away_team.defense)
 
     @computed_field
-    @cached_property
+    @property
     def away_xg(self) -> float:
         return calculate_xg(self.away_team.attack - self.home_team.defense)
 
-    @computed_field
-    @cached_property
-    def winner(self) -> Optional[Team]:
-        if self.is_win():
-            return self.home_team
-        if self.is_loss():
-            return self.away_team
-        return None
-
-    @computed_field
-    @cached_property
-    def loser(self) -> Optional[Team]:
-        if self.is_win():
-            return self.away_team
-        if self.is_loss():
-            return self.home_team
-        return None
-
     def __str__(self) -> str:
         return "{} {:^9} {}".format(
-            self.home_team, str(self.result) or "-", self.away_team
+            self.home_team, str(self.result or "-"), self.away_team
         )
 
     def is_win(self) -> bool:
@@ -56,6 +37,20 @@ class Match(BaseModel):
 
     def is_loss(self) -> bool:
         return bool(self.result and self.result.is_loss())
+
+    def get_winner(self) -> Optional[Team]:
+        if self.is_win():
+            return self.home_team
+        if self.is_loss():
+            return self.away_team
+        return None
+
+    def get_loser(self) -> Optional[Team]:
+        if self.is_win():
+            return self.away_team
+        if self.is_loss():
+            return self.home_team
+        return None
 
     def get_opponent(self, team: Team) -> Team:
         if team is self.home_team:
@@ -77,6 +72,7 @@ class Match(BaseModel):
         return self.get_team_goals(self.get_opponent(team))
 
     def get_away_match(self) -> "Match":
+        assert not self.result, "No away match for a match with a result"
         return self.model_copy(
             update={
                 "home_team": self.away_team,

@@ -1,13 +1,13 @@
 from collections import Counter, defaultdict
 from functools import cached_property
-from typing import Any, Sequence
+from typing import Annotated
 
+from annotated_types import Len
 from more_itertools import flatten, ilen
 from pydantic import (
     BaseModel,
     ConfigDict,
     computed_field,
-    field_validator,
     model_validator,
 )
 
@@ -22,7 +22,7 @@ class TeamStatistics(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     team: Team
-    matches: Sequence[Match]
+    matches: Annotated[list[Match], Len(min_length=1)]
 
     @model_validator(mode="after")
     def validate_team_matches(self):
@@ -39,7 +39,7 @@ class TeamStatistics(BaseModel):
     @computed_field
     @cached_property
     def wins(self) -> int:
-        return ilen(m for m in self.matches if m.winner is self.team)
+        return ilen(m for m in self.matches if m.get_winner() is self.team)
 
     @computed_field
     @cached_property
@@ -49,7 +49,7 @@ class TeamStatistics(BaseModel):
     @computed_field
     @cached_property
     def losses(self) -> int:
-        return ilen(m for m in self.matches if m.loser is self.team)
+        return ilen(m for m in self.matches if m.get_loser() is self.team)
 
     @computed_field
     @cached_property
@@ -113,13 +113,7 @@ class MatchStatistics(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    matches: Sequence[Match]
-
-    @field_validator("matches")
-    @classmethod
-    def non_empty(cls, sequence: Sequence[Any]):
-        assert bool(sequence), "must not be empty"
-        return sequence
+    matches: Annotated[list[Match], Len(min_length=1)]
 
     @computed_field
     @cached_property
