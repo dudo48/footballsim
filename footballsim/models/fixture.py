@@ -7,8 +7,8 @@ from tabulate import tabulate
 from .match import Match
 
 
-class Round(BaseModel):
-    """Encapsulates a round of matches"""
+class Fixture(BaseModel):
+    """Encapsulates a fixture of matches"""
 
     model_config = ConfigDict(frozen=True)
 
@@ -22,7 +22,7 @@ class Round(BaseModel):
             colalign=("left", "center", "left"),
         )
 
-    def get_away_round(self) -> "Round":
+    def get_away_fixture(self) -> "Fixture":
         return self.model_copy(
             update={"matches": [m.get_away_match() for m in self.matches]}
         )

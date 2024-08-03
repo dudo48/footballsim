@@ -6,7 +6,8 @@ from typing import Any, overload
 from models.league import League
 from models.match import Match
 from models.match_result import MatchResult, Result
-from models.round import Round
+
+from models.fixture import Fixture
 
 
 def poisson(n: float) -> int:
@@ -39,21 +40,23 @@ def _(match: Match) -> Match:
 
 
 @_simulate.register
-def _(round: Round) -> Round:
-    return round.model_copy(update={"matches": [simulate(m) for m in round.matches]})
+def _(fixture: Fixture) -> Fixture:
+    return fixture.model_copy(
+        update={"matches": [simulate(m) for m in fixture.matches]}
+    )
 
 
 @_simulate.register
 def _(league: League) -> League:
     # recompute the cached_property
     standings = league.standings[:1]
-    rounds: list[Round] = []
-    for round in league.rounds:
-        simulated_round = simulate(round)
-        rounds.append(simulated_round)
-        standings.append(standings[-1].update_from_matches(simulated_round.matches))
+    fixtures: list[Fixture] = []
+    for fixture in league.fixtures:
+        simulated_fixture = simulate(fixture)
+        fixtures.append(simulated_fixture)
+        standings.append(standings[-1].update_from_matches(simulated_fixture.matches))
 
-    return league.model_copy(update={"rounds": rounds, "standings": standings})
+    return league.model_copy(update={"fixtures": fixtures, "standings": standings})
 
 
 @overload
@@ -61,7 +64,7 @@ def simulate(model: Match) -> Match: ...
 
 
 @overload
-def simulate(model: Round) -> Round: ...
+def simulate(model: Fixture) -> Fixture: ...
 
 
 @overload
