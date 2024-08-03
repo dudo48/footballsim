@@ -1,7 +1,6 @@
-import math
 import random
 from statistics import fmean
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Generator
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
@@ -36,21 +35,27 @@ class Team(BaseModel):
         return cls(name=name, attack=attack, defense=defense)
 
     @classmethod
-    def generate(
-        cls, names: list[str], min_strength: int, max_strength: Optional[int] = None
-    ) -> "list[Team]":
+    def random(
+        cls,
+        names: list[str],
+        strength_mu: float = 0,
+        strength_sigma: float = 1,
+        ad_difference_sigma: float = 1,
+    ) -> "Generator[Team, None, None]":
         """
-        Generate random team(s) with count according to number of names given
+        Generates teams with random strengths according to gauss distribution
         """
-        if not max_strength:
-            max_strength = min_strength
 
-        def generate_random_team(name: str) -> "Team":
-            strength = random.randint(min_strength, max_strength)
-            ad_difference = round(random.gauss(sigma=math.log(math.sqrt(strength))))
+        def random_team(name: str) -> "Team":
+            strength = round(random.gauss(strength_mu, strength_sigma))
+            ad_difference = round(random.gauss(sigma=ad_difference_sigma))
             return cls.from_strength(name, strength, ad_difference)
 
-        return [generate_random_team(name) for name in names]
+        i = 0
+        while True:
+            for name in names:
+                yield random_team(name if i == 0 else f"{name} {i}")
+            i += 1
 
     @classmethod
     def from_statistics(cls, team_statistics: "TeamStatistics") -> "Team":
