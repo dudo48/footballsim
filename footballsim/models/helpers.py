@@ -7,11 +7,11 @@ if TYPE_CHECKING:
     from .standings import TeamStanding
 
 
-def calculate_xg(strength_diff: float) -> float:
-    return XG_CONSTANT * (XG_FACTOR**strength_diff)
+def calculate_xg(difference: float) -> float:
+    return XG_CONSTANT * (XG_FACTOR**difference)
 
 
-def calculate_strength_diff(xg: float) -> float:
+def calculate_difference(xg: float) -> float:
     """
     Calculate strength difference from XG. Inverse function of calculate_xg.
     """

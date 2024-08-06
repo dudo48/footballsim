@@ -4,14 +4,13 @@ from pydantic import BaseModel, ConfigDict, computed_field
 
 from .helpers import calculate_xg
 from .match_result import MatchResult
-from .team import Team
 
 
 class Match(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    home_team: Team
-    away_team: Team
+    home_team: "Team"
+    away_team: "Team"
     result: Optional[MatchResult] = None
 
     @computed_field
@@ -38,28 +37,31 @@ class Match(BaseModel):
     def is_loss(self) -> bool:
         return bool(self.result and self.result.is_loss())
 
-    def get_winner(self) -> Optional[Team]:
+    def get_winner(self) -> Optional["Team"]:
         if self.is_win():
             return self.home_team
         if self.is_loss():
             return self.away_team
         return None
 
-    def get_loser(self) -> Optional[Team]:
+    def get_loser(self) -> Optional["Team"]:
         if self.is_win():
             return self.away_team
         if self.is_loss():
             return self.home_team
         return None
 
-    def get_opponent(self, team: Team) -> Team:
+    def is_contender(self, team: "Team") -> bool:
+        return team is self.home_team or team is self.away_team
+
+    def get_opponent(self, team: "Team") -> "Team":
         if team is self.home_team:
             return self.away_team
         elif team is self.away_team:
             return self.home_team
         raise ValueError(f"The team '{team}' is not a contender in the match.")
 
-    def get_team_goals(self, team: Team) -> int:
+    def get_goals(self, team: "Team") -> int:
         if not self.result:
             raise ValueError("The match does not have a result.")
         if team is self.home_team:
@@ -68,8 +70,8 @@ class Match(BaseModel):
             return self.result.away_goals
         raise ValueError(f"The team '{team}' is not a contender in the match.")
 
-    def get_opponent_goals(self, team: Team) -> int:
-        return self.get_team_goals(self.get_opponent(team))
+    def get_opponent_goals(self, team: "Team") -> int:
+        return self.get_goals(self.get_opponent(team))
 
     def get_away_match(self) -> "Match":
         assert not self.result, "No away match for a match with a result"
@@ -79,3 +81,6 @@ class Match(BaseModel):
                 "away_team": self.home_team,
             }
         )
+
+
+from .team import Team

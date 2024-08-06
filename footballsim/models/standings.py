@@ -70,7 +70,7 @@ class Standings(BaseModel):
     @staticmethod
     def calculate_teams_delta(match: Match) -> tuple[TeamStanding, TeamStanding]:
         """Calculate the delta TeamStanding of the home team and away team from a single match and returns the results in the order: home, away"""
-        assert bool(match.result)
+        assert match.result
         home: dict[str, int] = {}
         away: dict[str, int] = {}
         if match.is_draw():
@@ -112,8 +112,8 @@ class Standings(BaseModel):
     ) -> list[TeamStanding]:
         """Calculate positions of a list of team standings using the standings' tie breaker gunction"""
         return [
-            s.model_copy(update={"position": i + 1})
-            for i, s in enumerate(
+            standing.model_copy(update={"position": i + 1})
+            for i, standing in enumerate(
                 sorted(team_standings, key=self.tie_breakers, reverse=True)
             )
         ]

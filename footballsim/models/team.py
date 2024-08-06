@@ -1,13 +1,11 @@
 import random
 from statistics import fmean
-from typing import TYPE_CHECKING, Generator
+from typing import Generator
 
+from more_itertools import bucket
 from pydantic import BaseModel, ConfigDict, computed_field
 
-from .helpers import calculate_strength_diff
-
-if TYPE_CHECKING:
-    from .statistics import TeamStatistics
+from .helpers import calculate_difference
 
 
 class Team(BaseModel):
@@ -57,49 +55,68 @@ class Team(BaseModel):
                 yield random_team(name if i == 0 else f"{name} {i}")
             i += 1
 
-    @classmethod
-    def from_statistics(cls, team_statistics: "TeamStatistics") -> "Team":
+    @staticmethod
+    def from_matches(matches: "list[Match]", team: "Team") -> "Team":
         """
-        Create a team with predicted strength from a TeamStatistics object
+        Predict a team according to its results in a number of matches
 
         Args:
-            statistics (TeamStatistics):
+            team (Team): The team to predict the strengths of
+            matches (list[Match]): The group of matches to predict the team from. The team must be a contender in at least one of the matches. The matches in which the team is not a contender in will be ignored
 
         Returns:
-            Team: a new Team object
+            Team: A new team similar to the original team except with possibly different strengths
         """
 
-        def calculate_diff(goals: int):
-            return calculate_strength_diff(goals or 0.5)
+        team_matches = [m for m in matches if m.is_contender(team)]
+        assert (
+            team_matches
+        ), f"The team '{team}' is not a contender in any of the matches."
+
+        opponent_matches = bucket(team_matches, lambda m: m.get_opponent(team))
+        h2h_statistics = [
+            HeadToHeadStatistics(matches=list(opponent_matches[o]), team=team)
+            for o in opponent_matches
+        ]
 
         attacks: list[float] = []
         defenses: list[float] = []
+        weights: list[int] = []
 
-        team = team_statistics.team
-        for match in team_statistics.matches:
-            opponent = match.get_opponent(team)
-            goals_scored, goals_conceded = (
-                match.get_team_goals(team),
-                match.get_team_goals(opponent),
+        for statistics in h2h_statistics:
+            zero_substitute = 1 / (statistics.number_of_matches + 1)
+            attacks.append(
+                statistics.opponent.defense
+                + calculate_difference(
+                    statistics.average_goals_scored or zero_substitute
+                )
             )
-
-            attacks.append(opponent.defense + calculate_diff(goals_scored))
-            defenses.append(opponent.attack - calculate_diff(goals_conceded))
+            defenses.append(
+                statistics.opponent.attack
+                - calculate_difference(
+                    statistics.average_goals_conceded or zero_substitute
+                )
+            )
+            weights.append(statistics.number_of_matches)
 
         return team.model_copy(
             update={
-                "attack": round(fmean(attacks)),
-                "defense": round(fmean(defenses)),
+                "attack": round(fmean(attacks, weights)),
+                "defense": round(fmean(defenses, weights)),
             }
         )
 
     @computed_field
     @property
-    def strength(self) -> int:
-        return round((self.attack + self.defense) / 2)
+    def strength(self) -> float:
+        return (self.attack + self.defense) / 2
 
     def __str__(self) -> str:
         return self.name
 
     def __lt__(self, other: "Team") -> bool:
         return self.strength < other.strength
+
+
+from .match import Match
+from .statistics import HeadToHeadStatistics
