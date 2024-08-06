@@ -3,11 +3,10 @@ import random
 from functools import singledispatch
 from typing import Any, overload
 
+from models.fixture import Fixture
 from models.league import League
 from models.match import Match
 from models.match_result import MatchResult, Result
-
-from models.fixture import Fixture
 
 
 def poisson(n: float) -> int:
@@ -48,7 +47,6 @@ def _(fixture: Fixture) -> Fixture:
 
 @_simulate.register
 def _(league: League) -> League:
-    # recompute the cached_property
     standings = league.standings[:1]
     fixtures: list[Fixture] = []
     for fixture in league.fixtures:

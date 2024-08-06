@@ -163,3 +163,4 @@ cython_debug/
 
 /.vscode
 /footballsim/main.py
+/datasets
