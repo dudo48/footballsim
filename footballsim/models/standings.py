@@ -6,9 +6,12 @@ from pydantic import BaseModel, ConfigDict, computed_field
 from tabulate import tabulate
 
 from .constants import DRAW_POINTS, WIN_POINTS
-from .helpers import default_tie_breakers
 from .match import Match
 from .team import Team
+
+
+def default_tie_breakers(standing: "TeamStanding") -> tuple[int, ...]:
+    return standing.points, standing.goals_difference, standing.goals_scored
 
 
 class TeamStanding(BaseModel):

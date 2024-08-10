@@ -12,7 +12,6 @@ from pydantic import (
 )
 
 from .match_result import MatchResult, Result
-from .team import Team
 
 
 class MatchStatistics(BaseModel):
@@ -81,8 +80,8 @@ class TeamStatistics(MatchStatistics):
     @model_validator(mode="after")
     def validate_team(self):
         assert all(
-            m.is_contender(self.team) for m in self.matches
-        ), f"The team '{self.team}' must be a contender in all matches."
+            m.is_contestant(self.team) for m in self.matches
+        ), f"The team '{self.team}' must be a contestant in all matches."
         return self
 
     @computed_field
@@ -154,8 +153,8 @@ class HeadToHeadStatistics(TeamStatistics):
     @model_validator(mode="after")
     def validate_opponent(self):
         assert all(
-            m.is_contender(self.opponent) for m in self.matches
-        ), f"The team '{self.opponent}' must be a contender in all matches."
+            m.is_contestant(self.opponent) for m in self.matches
+        ), f"The team '{self.opponent}' must be a contestant in all matches."
         return self
 
     @computed_field
@@ -178,3 +177,4 @@ class HeadToHeadStatistics(TeamStatistics):
 
 
 from .match import Match
+from .team import Team

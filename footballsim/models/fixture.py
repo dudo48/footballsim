@@ -23,6 +23,7 @@ class Fixture(BaseModel):
         teams: list[Team | None],
         home_or_away: bool = False,
         shuffle_matches: bool = False,
+        sort_matches: bool = False,
     ) -> "Fixture":
         """Create matches fixture from a list of teams, where the ith team plays with the n - i team, where n is the number of teams.
         the list of teams might include None values which indicate a 'bye' contestant"""
@@ -37,8 +38,11 @@ class Fixture(BaseModel):
                 match = match.get_away_match()
             matches.append(match)
 
-        if shuffle_matches:
+        if sort_matches:
+            matches.sort()
+        elif shuffle_matches:
             random.shuffle(matches)
+
         return cls(matches=matches)
 
     def __str__(self) -> str:

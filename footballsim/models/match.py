@@ -23,10 +23,18 @@ class Match(BaseModel):
     def away_xg(self) -> float:
         return calculate_xg(self.away_team.attack - self.home_team.defense)
 
+    @computed_field
+    @property
+    def strength(self) -> float:
+        return self.home_team.strength + self.away_team.strength
+
     def __str__(self) -> str:
         return "{} {:^9} {}".format(
             self.home_team, str(self.result or "-"), self.away_team
         )
+
+    def __lt__(self, other: "Match") -> bool:
+        return self.strength < other.strength
 
     def is_win(self) -> bool:
         return bool(self.result and self.result.is_win())
@@ -51,7 +59,7 @@ class Match(BaseModel):
             return self.home_team
         return None
 
-    def is_contender(self, team: "Team") -> bool:
+    def is_contestant(self, team: "Team") -> bool:
         return team is self.home_team or team is self.away_team
 
     def get_opponent(self, team: "Team") -> "Team":
@@ -59,7 +67,7 @@ class Match(BaseModel):
             return self.away_team
         elif team is self.away_team:
             return self.home_team
-        raise ValueError(f"The team '{team}' is not a contender in the match.")
+        raise ValueError(f"The team '{team}' is not a contestant in the match.")
 
     def get_goals(self, team: "Team") -> int:
         if not self.result:
@@ -68,7 +76,7 @@ class Match(BaseModel):
             return self.result.home_goals
         elif team is self.away_team:
             return self.result.away_goals
-        raise ValueError(f"The team '{team}' is not a contender in the match.")
+        raise ValueError(f"The team '{team}' is not a contestant in the match.")
 
     def get_opponent_goals(self, team: "Team") -> int:
         return self.get_goals(self.get_opponent(team))
