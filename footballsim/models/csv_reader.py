@@ -1,6 +1,8 @@
 import csv
 from typing import NamedTuple
 
+from more_itertools import nth
+
 from .match import Match
 from .match_result import MatchResult, Result
 from .team import Team
@@ -13,10 +15,10 @@ class ReadMatchesResult(NamedTuple):
 
 def read_matches(
     csv_file: str,
-    home_team_col: str = "home_team",
-    away_team_col: str = "away_team",
-    home_goals_col: str = "home_goals",
-    away_goals_col: str = "away_goals",
+    home_team_col: int,
+    away_team_col: int,
+    home_goals_col: int,
+    away_goals_col: int,
 ) -> ReadMatchesResult:
     def create_team(name: str) -> Team:
         if name not in team_names:
@@ -29,11 +31,11 @@ def read_matches(
     teams: list[Team] = []
     with open(csv_file) as file:
         team_names: dict[str, Team] = {}
-        reader = csv.DictReader(file)
+        reader = csv.reader(file)
         for row in reader:
             match_result = None
-            home_goals: str = row.get(home_goals_col, "")
-            away_goals: str = row.get(away_goals_col, "")
+            home_goals = nth(row, home_goals_col, "")
+            away_goals = nth(row, away_goals_col, "")
             if home_goals.isdigit() and away_goals.isdigit():
                 match_result = MatchResult(
                     full_time=Result(

@@ -159,7 +159,8 @@ class Team(BaseModel):
         }
 
         # iterate over teams according to their predicted strength
-        for team in sorted(team_matches, key=lambda t: teams_override[t]):
+        teams_to_predict = sorted(team_matches.keys(), key=lambda t: teams_override[t])
+        for team in teams_to_predict:
             predicted_team = Team.from_matches(team_matches[team], team, teams_override)
 
             # update the team with the more accurate prediction
