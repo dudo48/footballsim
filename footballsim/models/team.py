@@ -1,6 +1,6 @@
 import random
 from collections import defaultdict
-from statistics import fmean
+from statistics import fmean, median
 from typing import Generator, Optional
 
 from more_itertools import bucket
@@ -18,7 +18,9 @@ class Team(BaseModel):
     defense: int = 0
 
     @classmethod
-    def from_strength(cls, name: str, strength: int, ad_difference: int = 0) -> "Team":
+    def from_strength(
+        cls, name: str = "", strength: int = 0, ad_difference: int = 0
+    ) -> "Team":
         """
         Create a team from single strength value and the difference between its attack and defense and the value
 
@@ -139,13 +141,19 @@ class Team(BaseModel):
             team_matches[match.home_team].append(match)
             team_matches[match.away_team].append(match)
 
-        # set the initial strength of teams using an imaginary medium-strength team
-        anchor_team = Team.from_strength("", mid_strength)
-
         teams_statistics = [
             TeamStatistics(matches=matches, team=team)
             for team, matches in team_matches.items()
         ]
+
+        # set the initial strength of teams using an imaginary medium-strength team
+        anchor_team = Team.from_h2h(
+            Team.from_strength(),
+            Team.from_strength(strength=mid_strength),
+            median((s.average_goals_scored for s in teams_statistics)),
+            median((s.average_goals_conceded for s in teams_statistics)),
+            round(median((s.number_of_matches for s in teams_statistics))),
+        )
 
         teams_override = {
             s.team: Team.from_h2h(
@@ -159,7 +167,10 @@ class Team(BaseModel):
         }
 
         # iterate over teams according to their predicted strength
-        teams_to_predict = sorted(team_matches.keys(), key=lambda t: teams_override[t])
+        teams_to_predict = sorted(
+            team_matches.keys(),
+            key=lambda t: teams_override[t],
+        )
         for team in teams_to_predict:
             predicted_team = Team.from_matches(team_matches[team], team, teams_override)
 

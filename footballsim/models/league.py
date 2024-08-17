@@ -27,9 +27,9 @@ class League(BaseModel):
         random.shuffle(teams)
         fixtures = [
             Fixture.from_teams(
-                [teams[0]] + list(shifts), home_or_away=True, sort_matches=True
+                [teams[0]] + list(shift), home_or_away=True, sort_matches=True
             )
-            for shifts in circular_shifts(teams[1:])
+            for shift in circular_shifts(teams[1:])
         ]
 
         # create all next iterations with alternating home / away teams setting
